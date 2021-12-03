@@ -87,5 +87,10 @@ data.table(truth = dt$HHV, pred = pca_pred) %>% ggplot(aes(x=truth, y=pred)) + g
 now, let's try PLS, which could stand for "projection onto latent structures"
 
 ```{r}
-
+pls_regression <- plsr(HHV ~ ., 
+                       ncomp = 4, 
+                       data = dt[, -c('sample', 'dataset', 'carbon')], 
+                       validation = "LOO"
+                       )
+summary(pls_regression)
 ```
