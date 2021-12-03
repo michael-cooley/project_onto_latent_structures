@@ -1,0 +1,91 @@
+<!-- pls code -->
+<!-- Michael Cooley -->
+<!-- Thu 02-Dec-21 7:12 PM -->
+
+---
+title: "pca, regression, and pls"
+output: html_notebook
+---
+
+call the libraries
+
+```{r message=FALSE}
+library(tidymodels)
+library(data.table)
+library(magrittr)
+library(ggplot2)
+library(GGally)
+library(pls)
+```
+
+Let's get a dataset we can work with
+
+```{r}
+data(biomass)
+dt <- data.table(biomass)
+rm(biomass)
+```
+
+
+let's get a look at it
+
+```{r}
+dt
+str(dt)
+```
+
+are these guys related to each other?  what should we try and predict?
+
+```{r}
+dt[, -c('sample', 'dataset')] %>% ggpairs()
+```
+
+carbon and HHV are quite closely related.  Let's leave that out for this analysis.
+
+what does a standard, run-of-the-mill regression look like?
+
+```{r}
+native_regression <- lm(HHV~., data=dt[, -c('sample', 'dataset', 'carbon')])
+native_regression %>% summary()
+```
+
+how did the regression do?
+
+
+```{r}
+native_pred <- predict(native_regression, newdata=dt[, -c('sample', 'dataset', 'carbon')])
+data.table(truth = dt$HHV, pred = native_pred) %>% ggplot(aes(x=truth, y=pred)) + geom_point()
+```
+
+
+now, what would pca look like
+
+```{r}
+pca_model <- prcomp(dt[, -c('sample', 'dataset', 'carbon', 'HHV')], center = TRUE, scale. = TRUE)
+summary(pca_model)
+```
+what do the pc's look like?
+
+```{r}
+pca_dt <- predict(pca_model, newdata=dt[, -c('sample', 'dataset', 'carbon', 'HHV')]) %>% data.table()
+pca_dt
+```
+what does a regression look like with those first couple or three pc's?
+
+```{r}
+pca_dt[, HHV:=dt$HHV]
+pca_regression <- lm(HHV~., data=pca_dt[, -c('PC3')])
+pca_regression %>% summary()
+```
+
+weird.  I don't know why it's #3 that's the easy one to drop
+
+```{r}
+pca_pred <- predict(pca_regression, newdata=pca_dt)
+data.table(truth = dt$HHV, pred = pca_pred) %>% ggplot(aes(x=truth, y=pred)) + geom_point()
+```
+now, let's try PLS, which could stand for "projection onto latent structures"
+
+```{r}
+
+```
